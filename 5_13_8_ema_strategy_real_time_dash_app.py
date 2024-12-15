@@ -83,7 +83,15 @@ def update_graph(n, n_clicks, ticker):
     # Get the current price (last value in the 'Close' column)
     current_price = data['Close'].iloc[-1]
 
+    # Ensure current_price is a single float value
+    if isinstance(current_price, pd.Series):
+        current_price = current_price.iloc[-1]
+
     return fig, f'Current Price: {current_price:.2f}'
+
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True, host='0.0.0.0', port=8080)
 
 # Run the app
 if __name__ == '__main__':
