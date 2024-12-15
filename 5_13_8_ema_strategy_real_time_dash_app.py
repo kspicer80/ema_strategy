@@ -7,6 +7,7 @@ from dash import Dash, dcc, html
 from dash.dependencies import Input, Output, State
 import socket
 import os
+import traceback
 
 # Initialize the Dash app
 app = Dash(__name__)
@@ -44,11 +45,11 @@ def update_graph(n_clicks, ticker):
         return go.Figure(), "No internet connection. Cannot fetch data."
     
     try:
+        # Fetch data
         end_date = datetime.utcnow().date()
         start_date = end_date - timedelta(days=60)
         print(f"Fetching data for {ticker} from {start_date} to {end_date}")
 
-        # Use timeout to prevent hanging
         data = yf.download(ticker, start=start_date, end=end_date, interval='1d', timeout=10)
 
         if data.empty:
@@ -95,11 +96,12 @@ def update_graph(n_clicks, ticker):
         return fig, f"Current Price: {current_price:.2f}"
 
     except Exception as e:
-        print(f"Error: {e}")
-        return go.Figure(), "Error occurred while processing data."
+        print("An error occurred while processing data:")
+        print(traceback.format_exc())  # Detailed error logging
+        return go.Figure(), f"Error: {str(e)}"
 
 # Run the app
 if __name__ == '__main__':
     print("Starting Dash app...")
-    port = int(os.environ.get("PORT", 8080))  # Dynamic port for Render
+    port = int(os.environ.get("PORT", 8080))
     app.run_server(debug=False, host='0.0.0.0', port=port)
