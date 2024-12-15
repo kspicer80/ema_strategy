@@ -31,6 +31,7 @@ app.layout = html.Div([
      Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
+# ...existing code...
 
 def update_graph(n, n_clicks, ticker):
     # Calculate the date range for the last 60 days
@@ -66,6 +67,10 @@ def update_graph(n, n_clicks, ticker):
             buy_signals.append((data.index[i], data['Close'].iloc[i]))
         elif data['EMA_5'].iloc[i] < data['EMA_13'].iloc[i] and data['EMA_5'].iloc[i-1] >= data['EMA_13'].iloc[i-1]:
             sell_signals.append((data.index[i], data['Close'].iloc[i]))
+
+    # Debugging information for buy/sell signals
+    print(f'Buy signals: {buy_signals}')
+    print(f'Sell signals: {sell_signals}')
 
     # Create the figure
     fig = go.Figure()
@@ -106,10 +111,6 @@ def update_graph(n, n_clicks, ticker):
         current_price = current_price.iloc[-1]
 
     return fig, f'Current Price: {current_price:.2f}'
-
-# Run the app
-if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=8080)
 
 # Run the app
 if __name__ == '__main__':
