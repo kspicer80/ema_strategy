@@ -38,6 +38,7 @@ def test_internet():
     [Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
+
 def update_graph(n_clicks, ticker):
     print(f"Ticker: {ticker}")
     
@@ -92,8 +93,17 @@ def update_graph(n_clicks, ticker):
             yaxis_title="Price",
         )
 
-        current_price = data['Close'].iloc[-1]
-        return fig, f"Current Price: {current_price:.2f}"
+        # Ensure current_price is a single float value
+        if not data['Close'].empty:
+            current_price = float(data['Close'].iloc[-1])
+        else:
+            current_price = None
+
+        # Return appropriate message
+        if current_price is not None:
+            return fig, f"Current Price: {current_price:.2f}"
+        else:
+            return fig, "No valid data available to determine current price."
 
     except Exception as e:
         print("An error occurred while processing data:")
