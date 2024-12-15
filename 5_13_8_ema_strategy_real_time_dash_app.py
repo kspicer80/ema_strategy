@@ -42,12 +42,20 @@ def update_graph(n, n_clicks, ticker):
 
     # Debugging information
     print(f'Data for {ticker}:')
-    print(data.head())
+    print(data)
+
+    # Check for missing values
+    print(f'Missing values in data: {data.isnull().sum()}')
 
     # Calculate EMAs
     data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
     data['EMA_13'] = data['Close'].ewm(span=13, adjust=False).mean()
     data['EMA_8'] = data['Close'].ewm(span=8, adjust=False).mean()
+
+    # Debugging information for EMAs
+    print(f'EMA_5: {data["EMA_5"].tail()}')
+    print(f'EMA_13: {data["EMA_13"].tail()}')
+    print(f'EMA_8: {data["EMA_8"].tail()}')
 
     # Generate buy/sell signals
     buy_signals = []
@@ -102,6 +110,7 @@ def update_graph(n, n_clicks, ticker):
 # Run the app
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8080)
+
 # Run the app
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8080)
