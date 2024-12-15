@@ -31,7 +31,6 @@ app.layout = html.Div([
      Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
-# ...existing code...
 
 def update_graph(n, n_clicks, ticker):
     # Calculate the date range for the last 60 days
@@ -47,6 +46,9 @@ def update_graph(n, n_clicks, ticker):
 
     # Check for missing values
     print(f'Missing values in data: {data.isnull().sum()}')
+
+    # Handle missing values by dropping them
+    data = data.dropna()
 
     # Calculate EMAs
     data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
@@ -111,6 +113,11 @@ def update_graph(n, n_clicks, ticker):
         current_price = current_price.iloc[-1]
 
     return fig, f'Current Price: {current_price:.2f}'
+
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True, host='0.0.0.0', port=8080)
+
 
 # Run the app
 if __name__ == '__main__':
