@@ -1,9 +1,13 @@
+import yfinance as yf
 import pandas as pd
 import numpy as np
-import yfinance as yf
 import plotly.graph_objs as go
 from datetime import datetime, timedelta
-from dash import Dash, html, dcc, Input, Output
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output, State
+import socket
+import os
+import traceback
 
 # Create a dummy Dash app for testing
 app = Dash(__name__)
