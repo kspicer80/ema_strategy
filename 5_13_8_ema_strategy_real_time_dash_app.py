@@ -31,7 +31,6 @@ app.layout = html.Div([
      Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
-
 def update_graph(n, n_clicks, ticker):
     # Calculate the date range for the last 60 days
     end_date = datetime.now().date()
@@ -76,7 +75,24 @@ def update_graph(n, n_clicks, ticker):
                                  text=['Sell'], textposition='bottom center'))
 
     # Update the layout
-    fig.update_layout(title=f'{ticker} Prices with 5, 13, and 8-day EMAs and Buy/Sell
+    fig.update_layout(
+        title=f'{ticker} Prices with 5, 13, and 8-day EMAs and Buy/Sell Signals',
+        xaxis_title='Date',
+        yaxis_title='Price'
+    )
+
+    # Get the current price (last value in the 'Close' column)
+    current_price = data['Close'].iloc[-1]
+
+    # Debugging information
+    print(f'current_price type: {type(current_price)}')
+    print(f'current_price value: {current_price}')
+
+    # Ensure current_price is a single float value
+    if isinstance(current_price, pd.Series):
+        current_price = current_price.iloc[-1]
+
+    return fig, f'Current Price: {current_price:.2f}'
 
 # Run the app
 if __name__ == '__main__':
