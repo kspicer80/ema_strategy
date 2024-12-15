@@ -5,6 +5,7 @@ import plotly.graph_objs as go
 from datetime import datetime, timedelta
 from dash import Dash, html, dcc, Input, Output
 import time
+import os
 
 # Create a Dash app
 app = Dash(__name__)
@@ -92,5 +93,9 @@ def update_graph(ticker, n_clicks, n_intervals):
         print(f"Error occurred: {e}")
         return go.Figure(), "Error occurred while fetching data."
 
+# Run the app
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    print("Starting Dash app...")
+    port = int(os.environ.get("PORT", 8080))
+    app.run_server(debug=False, host='0.0.0.0', port=port)
+
