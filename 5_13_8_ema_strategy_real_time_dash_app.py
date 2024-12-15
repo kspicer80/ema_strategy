@@ -31,6 +31,7 @@ app.layout = html.Div([
      Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
+
 def update_graph(n, n_clicks, ticker):
     # Calculate the date range for the last 60 days
     end_date = datetime.now().date()
@@ -38,6 +39,10 @@ def update_graph(n, n_clicks, ticker):
 
     # Download the data for the last 60 days (daily intervals)
     data = yf.download(ticker, start=start_date, end=end_date, interval='1d')
+
+    # Debugging information
+    print(f'Data for {ticker}:')
+    print(data.head())
 
     # Calculate EMAs
     data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
@@ -94,6 +99,9 @@ def update_graph(n, n_clicks, ticker):
 
     return fig, f'Current Price: {current_price:.2f}'
 
+# Run the app
+if __name__ == '__main__':
+    app.run_server(debug=True, host='0.0.0.0', port=8080)
 # Run the app
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8080)
