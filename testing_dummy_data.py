@@ -127,6 +127,7 @@ def update_graph(n_clicks, ticker):
         print(f"Error occurred: {e}")
         return go.Figure(), f"Error: {str(e)}"
 
+
 # Run the app
 if __name__ == '__main__':
     print("Starting Dash app...")
