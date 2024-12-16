@@ -60,12 +60,12 @@ def update_graph(n_clicks, ticker):
             print("No data retrieved.")
             return go.Figure(), "No valid data available for the selected ticker."
 
-        if ('Close', ticker) not in data.columns:
+        if 'Close' not in data.columns.get_level_values(0):
             print("No 'Close' column in data.")
             return go.Figure(), "No 'Close' column available for the selected ticker."
 
         # Extract the 'Close' column
-        data = data['Close'][ticker]
+        data = data['Close']
 
         # Drop NaNs
         data = data.dropna()
@@ -127,14 +127,8 @@ def update_graph(n_clicks, ticker):
         print(f"Error occurred: {e}")
         return go.Figure(), f"Error: {str(e)}"
 
-
 # Run the app
 if __name__ == '__main__':
     print("Starting Dash app...")
     port = int(os.environ.get("PORT", 8080))
-    app.run_server(debug=False, host='0.0.0.0', port=port)
-# Run the app
-if __name__ == '__main__':
-    print("Starting Dash app...")
-    port = int(os.environ.get("PORT", 8080))
-    app.run_server(debug=False, host='0.0.0.0', port=port)
+    app.run_server(debug=True, host='0.0.0.0', port=port)
