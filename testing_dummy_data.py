@@ -38,6 +38,7 @@ def test_internet():
     [Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
+
 def update_graph(n, n_clicks, ticker):
     try:
         # Calculate the date range for the last 60 days
@@ -45,71 +46,60 @@ def update_graph(n, n_clicks, ticker):
         start_date = end_date - timedelta(days=60)
 
         # Download the data for the last 60 days (daily intervals)
+        print(f"Fetching data for {ticker}...")
         data = yf.download(ticker, start=start_date, end=end_date, interval='1d')
 
-        # Debugging information
-        print(f'Data for {ticker}:')
-        print(data)
+        if data.empty or 'Close' not in data.columns:
+            print("No data retrieved or 'Close' column missing.")
+            return go.Figure(), "No valid data available for the selected ticker."
 
-        # Check for missing values
-        print(f'Missing values in data: {data.isnull().sum()}')
+        # Drop NaNs
+        data = data.dropna(subset=['Close'])
+        if data.empty:
+            print("No valid data remaining after dropping NaN values.")
+            return go.Figure(), "No valid data available for the selected ticker."
 
-        # Handle missing values by dropping them
-        data = data.dropna()
+        # Validate index
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
 
-        # Calculate EMAs
+        # Compute EMAs
         data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
         data['EMA_13'] = data['Close'].ewm(span=13, adjust=False).mean()
         data['EMA_8'] = data['Close'].ewm(span=8, adjust=False).mean()
 
-        # Debugging information for EMAs
-        print(f'EMA_5: {data["EMA_5"].tail()}')
-        print(f'EMA_13: {data["EMA_13"].tail()}')
-        print(f'EMA_8: {data["EMA_8"].tail()}')
+        # Debug prints
+        print("Close prices:")
+        print(data['Close'].tail())
+        print("EMA_5:")
+        print(data['EMA_5'].tail())
 
-        # Generate buy/sell signals
-        buy_signals = []
-        sell_signals = []
-
-        for i in range(1, len(data)):
-            if data['EMA_5'].iloc[i] > data['EMA_13'].iloc[i] and data['EMA_5'].iloc[i-1] <= data['EMA_13'].iloc[i-1]:
-                buy_signals.append((data.index[i], data['Close'].iloc[i]))
-            elif data['EMA_5'].iloc[i] < data['EMA_13'].iloc[i] and data['EMA_5'].iloc[i-1] >= data['EMA_13'].iloc[i-1]:
-                sell_signals.append((data.index[i], data['Close'].iloc[i]))
-
-        # Debugging information for buy/sell signals
-        print(f'Buy signals: {buy_signals}')
-        print(f'Sell signals: {sell_signals}')
-
-        # Create the figure
+        # Create figure
         fig = go.Figure()
-
         fig.add_trace(go.Scatter(x=data.index, y=data['Close'], mode='lines', name='Close'))
         fig.add_trace(go.Scatter(x=data.index, y=data['EMA_5'], mode='lines', name='EMA 5'))
         fig.add_trace(go.Scatter(x=data.index, y=data['EMA_13'], mode='lines', name='EMA 13'))
         fig.add_trace(go.Scatter(x=data.index, y=data['EMA_8'], mode='lines', name='EMA 8'))
 
-        # Add buy signals
+        # Add buy/sell signals (dummy example for now)
+        buy_signals = [(data.index[-5], data['Close'].iloc[-5])]
+        sell_signals = [(data.index[-3], data['Close'].iloc[-3])]
         for signal in buy_signals:
-            fig.add_trace(go.Scatter(x=[signal[0]], y=[signal[1]], mode='markers+text', name='Buy Signal',
-                                     marker=dict(symbol='triangle-up', size=10, color='green'),
-                                     text=['Buy'], textposition='top center'))
-
-        # Add sell signals
+            fig.add_trace(go.Scatter(x=[signal[0]], y=[signal[1]], mode='markers', name='Buy Signal',
+                                     marker=dict(symbol='triangle-up', size=10, color='green')))
         for signal in sell_signals:
-            fig.add_trace(go.Scatter(x=[signal[0]], y=[signal[1]], mode='markers+text', name='Sell Signal',
-                                     marker=dict(symbol='triangle-down', size=10, color='red'),
-                                     text=['Sell'], textposition='bottom center'))
+            fig.add_trace(go.Scatter(x=[signal[0]], y=[signal[1]], mode='markers', name='Sell Signal',
+                                     marker=dict(symbol='triangle-down', size=10, color='red')))
 
-        # Update the layout
+        # Update layout
         fig.update_layout(
             title=f"{ticker.upper()} Prices with 5, 13, and 8-day EMAs and Buy/Sell Signals",
-            xaxis_title='Date',
-            yaxis_title='Price',
+            xaxis_title="Date",
+            yaxis_title="Price",
             template="plotly_white"
         )
 
-        # Display the current price
+        # Current price
         current_price = data['Close'].iloc[-1]
 
         # Ensure current_price is a single float value
