@@ -1,109 +1,107 @@
-from dash import Dash, dcc, html, Input, Output, State
 import yfinance as yf
+import pandas as pd
+import numpy as np
 import plotly.graph_objs as go
-from dash.exceptions import PreventUpdate
 from datetime import datetime, timedelta
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output, State
+import socket
 import os
+import traceback
 
-# Initialize the app
+# Initialize the Dash app
 app = Dash(__name__)
 
-# App Layout
+# Layout of the app
 app.layout = html.Div([
     html.H1("Stock Prices with 5, 13, and 8-day EMAs and Buy/Sell Signals"),
-    
-    html.Div([
-        dcc.Input(
-            id='ticker-input',
-            type='text',
-            value='SOL-USD',  # Default 
-            placeholder="Enter a ticker symbol",
-            style={'width': '200px'}
-        ),
-        html.Button("Submit", id='submit-button', n_clicks=0, style={'marginLeft': '10px'}),
-    ], style={'marginBottom': '20px'}),
-    
-    dcc.Graph(id='graph'),
-    html.Div(id='current-price', style={'marginTop': '20px', 'fontWeight': 'bold'})
+    dcc.Input(id='ticker-input', type='text', value='SOL-USD', style={'marginRight': '10px'}),
+    html.Button(id='submit-button', n_clicks=0, children='Submit'),
+    dcc.Graph(id='price-graph'),
+    html.Div(id='current-price', style={'marginTop': '20px'}),
 ])
 
-# Callback for graph and price updates
-@app.callback(
-    [Output('graph', 'figure'), Output('current-price', 'children')],
-    Input('submit-button', 'n_clicks'),
-    State('ticker-input', 'value')
-)
-def update_graph(n_clicks, ticker):
-    if n_clicks == 0:
-        raise PreventUpdate  # Avoid triggering on app startup
-
+# Test internet connection
+def test_internet():
     try:
-        print(f"Button clicked {n_clicks} times. Fetching data for {ticker}...")
+        socket.create_connection(("www.google.com", 80), timeout=5)
+        print("Internet connection: OK")
+        return True
+    except OSError:
+        print("Internet connection: FAILED")
+        return False
 
-        # Validate user input
-        if not ticker:
-            return go.Figure(), "Error: Please enter a valid ticker symbol."
-
-        # Fetch stock data
+# Callback to update the graph
+@app.callback(
+    [Output('price-graph', 'figure'),
+     Output('current-price', 'children')],
+    [Input('submit-button', 'n_clicks')],
+    [State('ticker-input', 'value')]
+)
+def update_graph(n, n_clicks, ticker):
+    try:
+        # Calculate the date range for the last 60 days
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=60)
+
+        # Download the data for the last 60 days (daily intervals)
         data = yf.download(ticker, start=start_date, end=end_date, interval='1d')
 
-        if data.empty:
-            return go.Figure(), f"Error: No data found for {ticker}. Please check the symbol."
+        # Debugging information
+        print(f'Data for {ticker}:')
+        print(data)
+
+        # Check for missing values
+        print(f'Missing values in data: {data.isnull().sum()}')
+
+        # Handle missing values by dropping them
+        data = data.dropna()
 
         # Calculate EMAs
         data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
         data['EMA_13'] = data['Close'].ewm(span=13, adjust=False).mean()
         data['EMA_8'] = data['Close'].ewm(span=8, adjust=False).mean()
 
-        # Generate Buy/Sell Signals
+        # Debugging information for EMAs
+        print(f'EMA_5: {data["EMA_5"].tail()}')
+        print(f'EMA_13: {data["EMA_13"].tail()}')
+        print(f'EMA_8: {data["EMA_8"].tail()}')
+
+        # Generate buy/sell signals
         buy_signals = []
         sell_signals = []
 
         for i in range(1, len(data)):
-            if (
-                data['EMA_5'].iloc[i] > data['EMA_13'].iloc[i] and
-                data['EMA_5'].iloc[i - 1] <= data['EMA_13'].iloc[i - 1]
-            ):
+            if data['EMA_5'].iloc[i] > data['EMA_13'].iloc[i] and data['EMA_5'].iloc[i-1] <= data['EMA_13'].iloc[i-1]:
                 buy_signals.append((data.index[i], data['Close'].iloc[i]))
-            elif (
-                data['EMA_5'].iloc[i] < data['EMA_13'].iloc[i] and
-                data['EMA_5'].iloc[i - 1] >= data['EMA_13'].iloc[i - 1]
-            ):
+            elif data['EMA_5'].iloc[i] < data['EMA_13'].iloc[i] and data['EMA_5'].iloc[i-1] >= data['EMA_13'].iloc[i-1]:
                 sell_signals.append((data.index[i], data['Close'].iloc[i]))
 
-        print("Buy Signals:", buy_signals)
-        print("Sell Signals:", sell_signals)
+        # Debugging information for buy/sell signals
+        print(f'Buy signals: {buy_signals}')
+        print(f'Sell signals: {sell_signals}')
 
-        # Create the graph
+        # Create the figure
         fig = go.Figure()
 
-        # Add Close Prices and EMAs
         fig.add_trace(go.Scatter(x=data.index, y=data['Close'], mode='lines', name='Close'))
         fig.add_trace(go.Scatter(x=data.index, y=data['EMA_5'], mode='lines', name='EMA 5'))
         fig.add_trace(go.Scatter(x=data.index, y=data['EMA_13'], mode='lines', name='EMA 13'))
         fig.add_trace(go.Scatter(x=data.index, y=data['EMA_8'], mode='lines', name='EMA 8'))
 
-        # Add Buy Signals
+        # Add buy signals
         for signal in buy_signals:
-            fig.add_trace(go.Scatter(
-                x=[signal[0]], y=[signal[1]],
-                mode='markers+text', name='Buy Signal',
-                marker=dict(symbol='triangle-up', size=10, color='green'),
-                text=["Buy"], textposition='top center'
-            ))
+            fig.add_trace(go.Scatter(x=[signal[0]], y=[signal[1]], mode='markers+text', name='Buy Signal',
+                                     marker=dict(symbol='triangle-up', size=10, color='green'),
+                                     text=['Buy'], textposition='top center'))
 
-        # Add Sell Signals
+        # Add sell signals
         for signal in sell_signals:
-            fig.add_trace(go.Scatter(
-                x=[signal[0]], y=[signal[1]],
-                mode='markers+text', name='Sell Signal',
-                marker=dict(symbol='triangle-down', size=10, color='red'),
-                text=["Sell"], textposition='bottom center'
-            ))
+            fig.add_trace(go.Scatter(x=[signal[0]], y=[signal[1]], mode='markers+text', name='Sell Signal',
+                                     marker=dict(symbol='triangle-down', size=10, color='red'),
+                                     text=['Sell'], textposition='bottom center'))
 
-        # Update layout
+        # Update the layout
         fig.update_layout(
             title=f"{ticker.upper()} Prices with 5, 13, and 8-day EMAs and Buy/Sell Signals",
             xaxis_title='Date',
@@ -113,6 +111,11 @@ def update_graph(n_clicks, ticker):
 
         # Display the current price
         current_price = data['Close'].iloc[-1]
+
+        # Ensure current_price is a single float value
+        if isinstance(current_price, pd.Series):
+            current_price = current_price.iloc[-1]
+
         return fig, f"Current Price: {current_price:.2f}"
 
     except Exception as e:
@@ -124,4 +127,3 @@ if __name__ == '__main__':
     print("Starting Dash app...")
     port = int(os.environ.get("PORT", 8080))
     app.run_server(debug=False, host='0.0.0.0', port=port)
-
