@@ -3,7 +3,7 @@ import numpy as np
 import yfinance as yf
 import plotly.graph_objs as go
 from datetime import datetime, timedelta
-from dash import Dash, html, dcc, Input, Output, State, PreventUpdate
+from dash import Dash, html, dcc, Input, Output
 import time
 import os
 
@@ -40,13 +40,11 @@ app.layout = html.Div([
         #3n_intervals=0  # Starts from 0
     #)
 ])
-
 @app.callback(
     [Output('graph', 'figure'), Output('current-price', 'children')],
     Input('submit-button', 'n_clicks'),  # Input
     State('ticker-dropdown', 'value')    # State
 )
-
 def update_graph(n_clicks, ticker):
     if n_clicks is None:  # Prevent triggering when the page initially loads
         raise PreventUpdate
