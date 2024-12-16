@@ -8,6 +8,10 @@ from dash.dependencies import Input, Output, State
 import socket
 import os
 import traceback
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # Initialize the Dash app
 app = Dash(__name__)
@@ -25,10 +29,10 @@ app.layout = html.Div([
 def test_internet():
     try:
         socket.create_connection(("www.google.com", 80), timeout=5)
-        print("Internet connection: OK")
+        logging.info("Internet connection: OK")
         return True
     except OSError:
-        print("Internet connection: FAILED")
+        logging.info("Internet connection: FAILED")
         return False
 
 # Callback to update the graph
@@ -38,7 +42,6 @@ def test_internet():
     [Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
-
 def update_graph(n_clicks, ticker):
     try:
         # Calculate the date range for the last 60 days
@@ -46,31 +49,28 @@ def update_graph(n_clicks, ticker):
         start_date = end_date - timedelta(days=60)
 
         # Download the data for the last 60 days (daily intervals)
-        print(f"Fetching data for {ticker}...")
+        logging.info(f"Fetching data for {ticker}...")
         data = yf.download(ticker, start=start_date, end=end_date, interval='1d')
 
         # Debugging information
-        print(f"Data columns for {ticker}: {data.columns}")
-        print(f"First few rows of data for {ticker}:")
-        print(data.head())
-        print(f"Full data for {ticker}:")
-        print(data)
+        logging.info(f"Data columns for {ticker}: {data.columns}")
+        logging.info(f"First few rows of data for {ticker}:")
+        logging.info(data.head())
+        logging.info(f"Full data for {ticker}:")
+        logging.info(data)
 
         if data.empty:
-            print("No data retrieved.")
+            logging.info("No data retrieved.")
             return go.Figure(), "No valid data available for the selected ticker."
 
-        if 'Close' not in data.columns.get_level_values(0):
-            print("No 'Close' column in data.")
+        if 'Close' not in data.columns:
+            logging.info("No 'Close' column in data.")
             return go.Figure(), "No 'Close' column available for the selected ticker."
 
-        # Extract the 'Close' column
-        data = data['Close']
-
         # Drop NaNs
-        data = data.dropna()
+        data = data.dropna(subset=['Close'])
         if data.empty:
-            print("No valid data remaining after dropping NaN values.")
+            logging.info("No valid data remaining after dropping NaN values.")
             return go.Figure(), "No valid data available for the selected ticker."
 
         # Validate index
@@ -78,16 +78,15 @@ def update_graph(n_clicks, ticker):
             data.index = pd.to_datetime(data.index)
 
         # Compute EMAs
-        data = pd.DataFrame(data)
         data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
         data['EMA_13'] = data['Close'].ewm(span=13, adjust=False).mean()
         data['EMA_8'] = data['Close'].ewm(span=8, adjust=False).mean()
 
         # Debug prints
-        print("Close prices:")
-        print(data['Close'].tail())
-        print("EMA_5:")
-        print(data['EMA_5'].tail())
+        logging.info("Close prices:")
+        logging.info(data['Close'].tail())
+        logging.info("EMA_5:")
+        logging.info(data['EMA_5'].tail())
 
         # Create figure
         fig = go.Figure()
@@ -124,11 +123,11 @@ def update_graph(n_clicks, ticker):
         return fig, f"Current Price: {current_price:.2f}"
 
     except Exception as e:
-        print(f"Error occurred: {e}")
+        logging.error(f"Error occurred: {e}")
         return go.Figure(), f"Error: {str(e)}"
 
 # Run the app
 if __name__ == '__main__':
-    print("Starting Dash app...")
+    logging.info("Starting Dash app...")
     port = int(os.environ.get("PORT", 8080))
-    app.run_server(debug=True, host='0.0.0.0', port=port)
+    app.run_server(debug=False, host='0.0.0.0', port=port)
