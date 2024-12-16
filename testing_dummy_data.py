@@ -42,7 +42,6 @@ def test_internet():
     [Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
-
 def update_graph(n_clicks, ticker):
     try:
         # Calculate the date range for the last 60 days
@@ -64,30 +63,24 @@ def update_graph(n_clicks, ticker):
             logging.info("No data retrieved.")
             return go.Figure(), "No valid data available for the selected ticker."
 
-        # Handle MultiIndex and single-level index
-        if isinstance(data.columns, pd.MultiIndex):
-            if ('Close', ticker) not in data.columns:
-                logging.info("No 'Close' column in data.")
-                return go.Figure(), "No 'Close' column available for the selected ticker."
-            data = data['Close'][ticker]
-        else:
-            if 'Close' not in data.columns:
-                logging.info("No 'Close' column in data.")
-                return go.Figure(), "No 'Close' column available for the selected ticker."
-            data = data['Close']
+        # Reset index and rename columns to ensure single-level index
+        data = data.reset_index()
+        data.columns = [col[0] if isinstance(col, tuple) else col for col in data.columns]
+
+        if 'Close' not in data.columns:
+            logging.info("No 'Close' column in data.")
+            return go.Figure(), "No 'Close' column available for the selected ticker."
+
+        # Set the index back to Date
+        data.set_index('Date', inplace=True)
 
         # Drop NaNs
-        data = data.dropna()
+        data = data.dropna(subset=['Close'])
         if data.empty:
             logging.info("No valid data remaining after dropping NaN values.")
             return go.Figure(), "No valid data available for the selected ticker."
 
-        # Validate index
-        if not isinstance(data.index, pd.DatetimeIndex):
-            data.index = pd.to_datetime(data.index)
-
         # Compute EMAs
-        data = pd.DataFrame(data)
         data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
         data['EMA_13'] = data['Close'].ewm(span=13, adjust=False).mean()
         data['EMA_8'] = data['Close'].ewm(span=8, adjust=False).mean()
