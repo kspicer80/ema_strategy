@@ -39,6 +39,8 @@ def test_internet():
     [State('ticker-input', 'value')]
 )
 
+# ...existing code...
+
 def update_graph(n_clicks, ticker):
     try:
         # Calculate the date range for the last 60 days
@@ -53,6 +55,8 @@ def update_graph(n_clicks, ticker):
         print(f"Data columns for {ticker}: {data.columns}")
         print(f"First few rows of data for {ticker}:")
         print(data.head())
+        print(f"Full data for {ticker}:")
+        print(data)
 
         if data.empty or 'Close' not in data.columns:
             print("No data retrieved or 'Close' column missing.")
@@ -117,6 +121,11 @@ def update_graph(n_clicks, ticker):
         print(f"Error occurred: {e}")
         return go.Figure(), f"Error: {str(e)}"
 
+# Run the app
+if __name__ == '__main__':
+    print("Starting Dash app...")
+    port = int(os.environ.get("PORT", 8080))
+    app.run_server(debug=False, host='0.0.0.0', port=port)
 # Run the app
 if __name__ == '__main__':
     print("Starting Dash app...")
