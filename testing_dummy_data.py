@@ -39,8 +39,6 @@ def test_internet():
     [State('ticker-input', 'value')]
 )
 
-# ...existing code...
-
 def update_graph(n_clicks, ticker):
     try:
         # Calculate the date range for the last 60 days
@@ -58,12 +56,19 @@ def update_graph(n_clicks, ticker):
         print(f"Full data for {ticker}:")
         print(data)
 
-        if data.empty or 'Close' not in data.columns:
-            print("No data retrieved or 'Close' column missing.")
+        if data.empty:
+            print("No data retrieved.")
             return go.Figure(), "No valid data available for the selected ticker."
 
+        if ('Close', ticker) not in data.columns:
+            print("No 'Close' column in data.")
+            return go.Figure(), "No 'Close' column available for the selected ticker."
+
+        # Extract the 'Close' column
+        data = data['Close'][ticker]
+
         # Drop NaNs
-        data = data.dropna(subset=['Close'])
+        data = data.dropna()
         if data.empty:
             print("No valid data remaining after dropping NaN values.")
             return go.Figure(), "No valid data available for the selected ticker."
@@ -73,6 +78,7 @@ def update_graph(n_clicks, ticker):
             data.index = pd.to_datetime(data.index)
 
         # Compute EMAs
+        data = pd.DataFrame(data)
         data['EMA_5'] = data['Close'].ewm(span=5, adjust=False).mean()
         data['EMA_13'] = data['Close'].ewm(span=13, adjust=False).mean()
         data['EMA_8'] = data['Close'].ewm(span=8, adjust=False).mean()
@@ -126,12 +132,6 @@ if __name__ == '__main__':
     print("Starting Dash app...")
     port = int(os.environ.get("PORT", 8080))
     app.run_server(debug=False, host='0.0.0.0', port=port)
-# Run the app
-if __name__ == '__main__':
-    print("Starting Dash app...")
-    port = int(os.environ.get("PORT", 8080))
-    app.run_server(debug=False, host='0.0.0.0', port=port)
-
 # Run the app
 if __name__ == '__main__':
     print("Starting Dash app...")
