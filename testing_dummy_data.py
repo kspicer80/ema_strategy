@@ -33,10 +33,10 @@ app.layout = html.Div([
     
     html.Div(id='current-price', style={'margin-top': '20px', 'font-weight': 'bold'}),
 
-    # Interval Component: Updates every 2 minutes (120,000 milliseconds)
+    # Interval Component: Updates every hour
     dcc.Interval(
         id='interval-component',
-        interval=5*60*1000,  # 5 minutes in milliseconds
+        interval= interval=60*60*1000,  # 60 minutes in milliseconds
         n_intervals=0  # Starts from 0
     )
 ])
