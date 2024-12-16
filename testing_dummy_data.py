@@ -38,8 +38,7 @@ def test_internet():
     [Input('submit-button', 'n_clicks')],
     [State('ticker-input', 'value')]
 )
-
-def update_graph(n, n_clicks, ticker):
+def update_graph(n_clicks, ticker):
     try:
         # Calculate the date range for the last 60 days
         end_date = datetime.now().date()
