@@ -34,11 +34,11 @@ app.layout = html.Div([
     html.Div(id='current-price', style={'margin-top': '20px', 'font-weight': 'bold'}),
 
     # Interval Component: Updates every hour
-    dcc.Interval(
-        id='interval-component',
-        interval=60*60*1000,  # 60 minutes in milliseconds
-        n_intervals=0  # Starts from 0
-    )
+    #dcc.Interval(
+        #id='interval-component',
+        #interval=60*60*1000,  # 60 minutes in milliseconds
+        #3n_intervals=0  # Starts from 0
+    #)
 ])
 
 @app.callback(
