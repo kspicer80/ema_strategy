@@ -91,6 +91,16 @@ def update_graph(n_clicks, ticker):
         logging.info("EMA_5:")
         logging.info(data['EMA_5'].tail())
 
+        # Generate buy/sell signals
+        buy_signals = []
+        sell_signals = []
+
+        for i in range(1, len(data)):
+            if data['EMA_5'].iloc[i] > data['EMA_13'].iloc[i] and data['EMA_5'].iloc[i-1] <= data['EMA_13'].iloc[i-1]:
+                buy_signals.append((data.index[i], data['Close'].iloc[i]))
+            elif data['EMA_5'].iloc[i] < data['EMA_13'].iloc[i] and data['EMA_5'].iloc[i-1] >= data['EMA_13'].iloc[i-1]:
+                sell_signals.append((data.index[i], data['Close'].iloc[i]))
+
         # Create figure
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=data.index, y=data['Close'], mode='lines', name='Close'))
@@ -98,15 +108,21 @@ def update_graph(n_clicks, ticker):
         fig.add_trace(go.Scatter(x=data.index, y=data['EMA_13'], mode='lines', name='EMA 13'))
         fig.add_trace(go.Scatter(x=data.index, y=data['EMA_8'], mode='lines', name='EMA 8'))
 
-        # Add buy/sell signals (dummy example for now)
-        buy_signals = [(data.index[-5], data['Close'].iloc[-5])]
-        sell_signals = [(data.index[-3], data['Close'].iloc[-3])]
+        # Add buy signals
         for signal in buy_signals:
-            fig.add_trace(go.Scatter(x=[signal[0]], y=[signal[1]], mode='markers', name='Buy Signal',
-                                     marker=dict(symbol='triangle-up', size=10, color='green')))
+            fig.add_trace(go.Scatter(
+                x=[signal[0]], y=[signal[1]], mode='markers+text', name='Buy Signal',
+                marker=dict(symbol='triangle-up', size=15, color='green'),
+                text=[f'Buy: {signal[1]:.2f}'], textposition='top center'
+            ))
+
+        # Add sell signals
         for signal in sell_signals:
-            fig.add_trace(go.Scatter(x=[signal[0]], y=[signal[1]], mode='markers', name='Sell Signal',
-                                     marker=dict(symbol='triangle-down', size=10, color='red')))
+            fig.add_trace(go.Scatter(
+                x=[signal[0]], y=[signal[1]], mode='markers+text', name='Sell Signal',
+                marker=dict(symbol='triangle-down', size=15, color='red'),
+                text=[f'Sell: {signal[1]:.2f}'], textposition='bottom center'
+            ))
 
         # Update layout
         fig.update_layout(
