@@ -150,8 +150,4 @@ if __name__ == '__main__':
     logging.info("Starting Dash app...")
     port = int(os.environ.get("PORT", 8080))
     app.run_server(debug=False, host='0.0.0.0', port=port)
-# Run the app
-if __name__ == '__main__':
-    logging.info("Starting Dash app...")
-    port = int(os.environ.get("PORT", 8080))
-    app.run_server(debug=False, host='0.0.0.0', port=port)
+
